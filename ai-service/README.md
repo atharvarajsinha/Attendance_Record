@@ -19,3 +19,22 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001
 - `POST /verify-attendance` accepts `image`; compares detected faces against stored embeddings and returns present/absent records.
 
 The model adapter is isolated in `app/face_engine.py` so FaceNet can later be replaced by another implementation without changing Django or React.
+
+
+## Run without backend/frontend
+
+Use `register_student.py` and `verify_student.py` when you want to test the AI service locally without starting Django or React. Run them from the `ai-service/` directory after installing this service's requirements.
+
+Register a single student image and create `../media/embeddings/student_101.npy`:
+
+```bash
+python register_student.py --student-id 101 --image ../media/students/student101.jpg
+```
+
+Verify a classroom image against existing local embeddings:
+
+```bash
+python verify_student.py --image ../media/attendance/2026-06-29/classroom.jpg
+```
+
+`register_student.py` prints the created embedding path. `verify_student.py` prints the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status.
