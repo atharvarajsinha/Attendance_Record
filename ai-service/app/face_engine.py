@@ -1,12 +1,9 @@
 from abc import ABC, abstractmethod
-from io import BytesIO
 from typing import Iterable
 
+import cv2
 import numpy as np
-import torch
-from facenet_pytorch import InceptionResnetV1, MTCNN
-from PIL import Image
-from sklearn.metrics.pairwise import cosine_similarity
+from insightface.app import FaceAnalysis
 
 from app.config import settings
 
@@ -14,26 +11,39 @@ from app.config import settings
 class FaceEngine(ABC):
     @abstractmethod
     def image_to_embeddings(self, image_bytes: bytes) -> list[np.ndarray]:
-        """Return one embedding per detected face."""
+        """Return one normalized embedding per detected face."""
 
     @staticmethod
     def best_similarity(query: np.ndarray, candidates: Iterable[np.ndarray]) -> float:
-        scores = [float(cosine_similarity([query], [candidate])[0][0]) for candidate in candidates]
+        query_norm = _l2_normalize(query)
+        scores = [float(np.dot(query_norm, _l2_normalize(candidate))) for candidate in candidates]
         return max(scores) if scores else 0.0
 
 
-class FaceNetEngine(FaceEngine):
+class InsightFaceBuffaloEngine(FaceEngine):
+    """InsightFace Buffalo_L adapter used by the AI service.
+
+    The rest of the system depends only on the FaceEngine contract, so Django,
+    React, and API payloads remain unchanged if this adapter is replaced later.
+    """
+
     def __init__(self) -> None:
-        self.mtcnn = MTCNN(image_size=160, margin=20, keep_all=True, device=settings.device)
-        self.model = InceptionResnetV1(pretrained="vggface2").eval().to(settings.device)
+        self.app = FaceAnalysis(name=settings.insightface_model_name, providers=settings.insightface_providers)
+        self.app.prepare(ctx_id=settings.insightface_ctx_id, det_size=settings.detection_size)
 
     def image_to_embeddings(self, image_bytes: bytes) -> list[np.ndarray]:
-        image = Image.open(BytesIO(image_bytes)).convert("RGB")
-        faces = self.mtcnn(image)
-        if faces is None:
-            return []
-        if faces.ndim == 3:
-            faces = faces.unsqueeze(0)
-        with torch.no_grad():
-            embeddings = self.model(faces.to(settings.device)).cpu().numpy()
-        return [embedding.astype(np.float32) for embedding in embeddings]
+        image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Unable to decode image bytes.")
+
+        faces = self.app.get(image)
+        return [_l2_normalize(face.normed_embedding).astype(np.float32) for face in faces]
+
+
+def _l2_normalize(embedding: np.ndarray) -> np.ndarray:
+    embedding = np.asarray(embedding, dtype=np.float32)
+    norm = np.linalg.norm(embedding)
+    if norm == 0:
+        return embedding
+    return embedding / norm

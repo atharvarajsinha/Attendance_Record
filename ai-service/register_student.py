@@ -2,7 +2,7 @@
 """Register a student face directly inside the AI service.
 
 This script does not start or call Django, React, or the FastAPI server. It loads
-FaceNet/MTCNN locally, extracts exactly one face embedding from the supplied
+InsightFace Buffalo_L locally, extracts exactly one face embedding from the supplied
 student image, and saves it as `student_<student_id>.npy` in the configured
 embeddings directory.
 
@@ -28,10 +28,10 @@ def main() -> None:
     if not image_path.is_file():
         raise SystemExit(f"Image file not found: {image_path}")
 
-    from app.face_engine import FaceNetEngine
+    from app.face_engine import InsightFaceBuffaloEngine
     from app.recognition import register_student_face
 
-    result = register_student_face(FaceNetEngine(), args.student_id, image_path.read_bytes())
+    result = register_student_face(InsightFaceBuffaloEngine(), args.student_id, image_path.read_bytes())
     print(json.dumps(result, indent=2))
 
 

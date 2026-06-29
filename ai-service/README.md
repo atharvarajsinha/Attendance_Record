@@ -12,13 +12,15 @@ cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8001
 ```
 
+The first run downloads the InsightFace `buffalo_l` model pack. Use `DEVICE=cpu` for CPU inference or a non-CPU value with CUDA-capable ONNX Runtime providers available. The cosine `SIMILARITY_THRESHOLD` defaults to `0.45` and can be tuned in `.env`.
+
 ## APIs
 
 - `GET /health` returns service status.
 - `POST /register-face` accepts `student_id` and `image`; saves `student_<id>.npy`.
 - `POST /verify-attendance` accepts `image`; compares detected faces against stored embeddings and returns present/absent records.
 
-The model adapter is isolated in `app/face_engine.py` so FaceNet can later be replaced by another implementation without changing Django or React.
+The model adapter is isolated in `app/face_engine.py` so InsightFace Buffalo_L can later be replaced by another implementation without changing Django or React.
 
 
 ## Run without backend/frontend

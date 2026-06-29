@@ -1,10 +1,10 @@
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-from app.face_engine import FaceNetEngine
+from app.face_engine import InsightFaceBuffaloEngine
 from app.recognition import register_student_face, verify_attendance_image
 
 app = FastAPI(title="AI Attendance Face Service", version="1.0.0")
-face_engine = FaceNetEngine()
+face_engine = InsightFaceBuffaloEngine()
 
 
 @app.get("/health")

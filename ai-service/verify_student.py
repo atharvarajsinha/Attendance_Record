@@ -31,10 +31,10 @@ def main() -> None:
     if args.register and not args.student_id:
         raise SystemExit("--student-id is required when --register is used")
 
-    from app.face_engine import FaceNetEngine
+    from app.face_engine import InsightFaceBuffaloEngine
     from app.recognition import register_student_face, verify_attendance_image
 
-    face_engine = FaceNetEngine()
+    face_engine = InsightFaceBuffaloEngine()
     image_bytes = image_path.read_bytes()
 
     if args.register:
