@@ -1,28 +1,32 @@
 from pathlib import Path
+import re
+
 import numpy as np
 from app.config import settings
 from app.face_engine import FaceEngine
 
 
-def register_student_face(face_engine: FaceEngine, student_id: str, image_bytes: bytes) -> dict[str, str]:
+def register_student_face(
+    face_engine: FaceEngine, student_id: str, image_bytes: bytes, scope: str | None = None
+) -> dict[str, str]:
     embeddings = face_engine.image_to_embeddings(image_bytes)
     if len(embeddings) != 1:
         raise ValueError("Registration image must contain exactly one detectable face.")
 
-    path = settings.embeddings_dir / f"student_{student_id}.npy"
+    path = _embedding_dir(scope) / f"student_{student_id}.npy"
     np.save(path, embeddings[0])
-    return {"status": "success", "student_id": student_id, "embedding_path": str(path)}
+    return {"status": "success", "student_id": student_id, "scope": _normalize_scope(scope), "embedding_path": str(path)}
 
 
-def load_known_embeddings() -> dict[str, np.ndarray]:
+def load_known_embeddings(scope: str | None = None) -> dict[str, np.ndarray]:
     return {
         path.stem.removeprefix("student_"): np.load(path)
-        for path in Path(settings.embeddings_dir).glob("student_*.npy")
+        for path in _embedding_dir(scope).glob("student_*.npy")
     }
 
 
-def verify_attendance_image(face_engine: FaceEngine, image_bytes: bytes) -> dict[str, object]:
-    known_embeddings = load_known_embeddings()
+def verify_attendance_image(face_engine: FaceEngine, image_bytes: bytes, scope: str | None = None) -> dict[str, object]:
+    known_embeddings = load_known_embeddings(scope)
     if not known_embeddings:
         raise ValueError("No registered student embeddings were found.")
 
@@ -46,4 +50,23 @@ def verify_attendance_image(face_engine: FaceEngine, image_bytes: bytes) -> dict
         {"student_id": student_id, "status": "Present" if student_id in present_ids else "Absent"}
         for student_id in sorted(known_embeddings)
     ]
-    return {"status": "success", "detected_faces": len(detected_embeddings), "matches": matches, "students": students}
+    return {
+        "status": "success",
+        "scope": _normalize_scope(scope),
+        "detected_faces": len(detected_embeddings),
+        "matches": matches,
+        "students": students,
+    }
+
+
+def _embedding_dir(scope: str | None = None) -> Path:
+    normalized_scope = _normalize_scope(scope)
+    directory = settings.embeddings_dir / normalized_scope if normalized_scope else Path(settings.embeddings_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def _normalize_scope(scope: str | None = None) -> str | None:
+    if scope is None or not scope.strip():
+        return None
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", scope.strip()).strip("._-") or None

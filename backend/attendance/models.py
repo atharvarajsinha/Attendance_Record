@@ -5,6 +5,8 @@ class Student(models.Model):
     student_id = models.CharField(max_length=50, unique=True)
     full_name = models.CharField(max_length=255)
     email = models.EmailField(blank=True)
+    class_name = models.CharField(max_length=100, blank=True)
+    section = models.CharField(max_length=100, blank=True)
     image = models.ImageField(upload_to="students/")
     embedding_registered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -14,6 +16,8 @@ class Student(models.Model):
 
 
 class AttendanceSession(models.Model):
+    class_name = models.CharField(max_length=100, blank=True)
+    section = models.CharField(max_length=100, blank=True)
     image = models.ImageField(upload_to="attendance/%Y-%m-%d/")
     detected_faces = models.PositiveIntegerField(default=0)
     ai_response = models.JSONField(default=dict)

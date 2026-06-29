@@ -13,11 +13,15 @@ class AIServiceClient:
     def __init__(self, base_url: str | None = None) -> None:
         self.base_url = (base_url or settings.AI_SERVICE_URL).rstrip("/")
 
-    def register_face(self, student_id: str, image_path: str) -> dict[str, Any]:
-        return self._post_image("/register-face", image_path, data={"student_id": student_id})
+    def register_face(self, student_id: str, image_path: str, scope: str | None = None) -> dict[str, Any]:
+        data = {"student_id": student_id}
+        if scope:
+            data["scope"] = scope
+        return self._post_image("/register-face", image_path, data=data)
 
-    def verify_attendance(self, image_path: str) -> dict[str, Any]:
-        return self._post_image("/verify-attendance", image_path)
+    def verify_attendance(self, image_path: str, scope: str | None = None) -> dict[str, Any]:
+        data = {"scope": scope} if scope else None
+        return self._post_image("/verify-attendance", image_path, data=data)
 
     def _post_image(self, endpoint: str, image_path: str, data: dict[str, str] | None = None) -> dict[str, Any]:
         path = Path(image_path)

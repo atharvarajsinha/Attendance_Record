@@ -4,10 +4,10 @@
 This script does not start or call Django, React, or the FastAPI server. It loads
 InsightFace Buffalo_L locally, extracts exactly one face embedding from the supplied
 student image, and saves it as `student_<student_id>.npy` in the configured
-embeddings directory.
+embeddings directory or scoped class/section subdirectory.
 
 Example:
-    python register_student.py --student-id 101 --image ../media/students/student101.jpg
+    python register_student.py --student-id 101 --scope class_10_A --image ../media/students/student101.jpg
 """
 
 import argparse
@@ -19,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create a student face embedding using only the AI service code.")
     parser.add_argument("--student-id", required=True, help="Student ID used in the embedding filename.")
     parser.add_argument("--image", required=True, help="Path to a student image containing exactly one face.")
+    parser.add_argument("--scope", help="Optional class/section scope, for example class_10_A.")
     return parser.parse_args()
 
 
@@ -31,7 +32,7 @@ def main() -> None:
     from app.face_engine import InsightFaceBuffaloEngine
     from app.recognition import register_student_face
 
-    result = register_student_face(InsightFaceBuffaloEngine(), args.student_id, image_path.read_bytes())
+    result = register_student_face(InsightFaceBuffaloEngine(), args.student_id, image_path.read_bytes(), scope=args.scope)
     print(json.dumps(result, indent=2))
 
 

@@ -19,7 +19,9 @@ class StudentRegisterView(APIView):
         student = serializer.save(embedding_registered=False)
 
         try:
-            ai_response = AIServiceClient().register_face(student.student_id, student.image.path)
+            ai_response = AIServiceClient().register_face(
+                student.student_id, student.image.path, scope=build_attendance_scope(student.class_name, student.section)
+            )
         except AIServiceError as exc:
             transaction.set_rollback(True)
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
@@ -38,9 +40,13 @@ class AttendanceVerifyView(APIView):
         if image is None:
             return Response({"image": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
 
-        session = AttendanceSession.objects.create(image=image)
+        class_name = request.data.get("class_name", "")
+        section = request.data.get("section", "")
+        session = AttendanceSession.objects.create(image=image, class_name=class_name, section=section)
         try:
-            ai_response = AIServiceClient().verify_attendance(session.image.path)
+            ai_response = AIServiceClient().verify_attendance(
+                session.image.path, scope=build_attendance_scope(class_name, section)
+            )
         except AIServiceError as exc:
             transaction.set_rollback(True)
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
@@ -53,5 +59,10 @@ class AttendanceVerifyView(APIView):
         students = Student.objects.filter(student_id__in=statuses.keys())
         for student in students:
             AttendanceRecord.objects.create(session=session, student=student, status=statuses[student.student_id])
-        print(session.ai_response)
+
         return Response(AttendanceSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+
+
+def build_attendance_scope(class_name: str | None, section: str | None) -> str | None:
+    parts = [part.strip() for part in [class_name or "", section or ""] if part and part.strip()]
+    return "_".join(parts) if parts else None

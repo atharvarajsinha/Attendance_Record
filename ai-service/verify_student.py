@@ -20,6 +20,7 @@ def parse_args() -> argparse.Namespace:
         help="Register one student face instead of verifying attendance against existing embeddings.",
     )
     parser.add_argument("--student-id", help="Student ID required when --register is used.")
+    parser.add_argument("--scope", help="Optional class/section scope, for example class_10_A.")
     return parser.parse_args()
 
 
@@ -38,9 +39,9 @@ def main() -> None:
     image_bytes = image_path.read_bytes()
 
     if args.register:
-        result = register_student_face(face_engine, args.student_id, image_bytes)
+        result = register_student_face(face_engine, args.student_id, image_bytes, scope=args.scope)
     else:
-        result = verify_attendance_image(face_engine, image_bytes)
+        result = verify_attendance_image(face_engine, image_bytes, scope=args.scope)
 
     print(json.dumps(result, indent=2))
 

@@ -17,8 +17,8 @@ The first run downloads the InsightFace `buffalo_l` model pack. Use `DEVICE=cpu`
 ## APIs
 
 - `GET /health` returns service status.
-- `POST /register-face` accepts `student_id` and `image`; saves `student_<id>.npy`.
-- `POST /verify-attendance` accepts `image`; compares detected faces against stored embeddings and returns present/absent records.
+- `POST /register-face` accepts `student_id`, `image`, and optional `scope`; saves `student_<id>.npy` under the scope folder when provided.
+- `POST /verify-attendance` accepts `image` and optional `scope`; compares detected faces only against embeddings in that scope and returns present/absent records.
 
 The model adapter is isolated in `app/face_engine.py` so InsightFace Buffalo_L can later be replaced by another implementation without changing Django or React.
 
@@ -27,16 +27,16 @@ The model adapter is isolated in `app/face_engine.py` so InsightFace Buffalo_L c
 
 Use `register_student.py` and `verify_student.py` when you want to test the AI service locally without starting Django or React. Run them from the `ai-service/` directory after installing this service's requirements.
 
-Register a single student image and create `../media/embeddings/student_101.npy`:
+Register a single student image and create `../media/embeddings/class_10_A/student_101.npy`:
 
 ```bash
-python register_student.py --student-id 101 --image ../media/students/student101.jpg
+python register_student.py --student-id 101 --scope class_10_A --image ../media/students/student101.jpg
 ```
 
 Verify a classroom image against existing local embeddings:
 
 ```bash
-python verify_student.py --image ../media/attendance/2026-06-29/classroom.jpg
+python verify_student.py --scope class_10_A --image ../media/attendance/2026-06-29/classroom.jpg
 ```
 
-`register_student.py` prints only the created-embedding JSON. `verify_student.py` prints only the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status; InsightFace provider/model logs are suppressed so the output can be parsed directly.
+Use the same `--scope` value for students and classroom photos in one class/section. Without `--scope`, the service falls back to the legacy global embeddings folder. `register_student.py` prints only the created-embedding JSON. `verify_student.py` prints only the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status; InsightFace provider/model logs are suppressed so the output can be parsed directly.
