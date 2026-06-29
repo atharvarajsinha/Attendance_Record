@@ -53,5 +53,5 @@ class AttendanceVerifyView(APIView):
         students = Student.objects.filter(student_id__in=statuses.keys())
         for student in students:
             AttendanceRecord.objects.create(session=session, student=student, status=statuses[student.student_id])
-
+        print(session.ai_response)
         return Response(AttendanceSessionSerializer(session).data, status=status.HTTP_201_CREATED)
