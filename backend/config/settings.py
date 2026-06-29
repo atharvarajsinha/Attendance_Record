@@ -57,7 +57,7 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
         "ENGINE": "django.db.backends.postgresql",
         "NAME": parsed.path.removeprefix("/"),
         "USER": parsed.username,
-        "PASSWORD": parsed.password,
+        "PASSWORD": "Atharva@2912",
         "HOST": parsed.hostname,
         "PORT": parsed.port or 5432,
     }}
