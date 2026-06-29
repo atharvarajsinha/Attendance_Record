@@ -39,4 +39,4 @@ Verify a classroom image against existing local embeddings:
 python verify_student.py --image ../media/attendance/2026-06-29/classroom.jpg
 ```
 
-`register_student.py` prints the created embedding path. `verify_student.py` prints the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status.
+`register_student.py` prints only the created-embedding JSON. `verify_student.py` prints only the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status; InsightFace provider/model logs are suppressed so the output can be parsed directly.

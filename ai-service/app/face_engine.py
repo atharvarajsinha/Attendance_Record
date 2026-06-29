@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Iterable
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from io import StringIO
+from typing import Iterable, Iterator
+import warnings
 
 import cv2
 import numpy as np
@@ -28,8 +31,9 @@ class InsightFaceBuffaloEngine(FaceEngine):
     """
 
     def __init__(self) -> None:
-        self.app = FaceAnalysis(name=settings.insightface_model_name, providers=settings.insightface_providers)
-        self.app.prepare(ctx_id=settings.insightface_ctx_id, det_size=settings.detection_size)
+        with _suppress_insightface_console_output():
+            self.app = FaceAnalysis(name=settings.insightface_model_name, providers=settings.insightface_providers)
+            self.app.prepare(ctx_id=settings.insightface_ctx_id, det_size=settings.detection_size)
 
     def image_to_embeddings(self, image_bytes: bytes) -> list[np.ndarray]:
         image_array = np.frombuffer(image_bytes, dtype=np.uint8)
@@ -37,7 +41,8 @@ class InsightFaceBuffaloEngine(FaceEngine):
         if image is None:
             raise ValueError("Unable to decode image bytes.")
 
-        faces = self.app.get(image)
+        with _suppress_insightface_console_output():
+            faces = self.app.get(image)
         return [_l2_normalize(face.normed_embedding).astype(np.float32) for face in faces]
 
 
@@ -47,3 +52,12 @@ def _l2_normalize(embedding: np.ndarray) -> np.ndarray:
     if norm == 0:
         return embedding
     return embedding / norm
+
+
+@contextmanager
+def _suppress_insightface_console_output() -> Iterator[None]:
+    """Keep InsightFace provider/model logs and NumPy FutureWarnings out of CLI JSON output."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            yield
