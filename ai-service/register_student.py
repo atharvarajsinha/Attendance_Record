@@ -29,10 +29,10 @@ def main() -> None:
     if not image_path.is_file():
         raise SystemExit(f"Image file not found: {image_path}")
 
-    from app.face_engine import InsightFaceBuffaloEngine
+    from app.model_loader import get_face_engine
     from app.recognition import register_student_face
 
-    result = register_student_face(InsightFaceBuffaloEngine(), args.student_id, image_path.read_bytes(), scope=args.scope)
+    result = register_student_face(get_face_engine(), args.student_id, image_path.read_bytes(), scope=args.scope)
     print(json.dumps(result, indent=2))
 
 
