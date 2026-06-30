@@ -33,10 +33,10 @@ Register a single student image and create `../media/embeddings/SCH001/10/A/stud
 python register_student.py --student-id 101 --scope SCH001/10/A --image ../media/students/student101.jpg
 ```
 
-Verify a classroom image against existing local embeddings:
+Verify one or more classroom images against existing local embeddings:
 
 ```bash
-python verify_student.py --scope SCH001/10/A --image ../media/attendance/classroom.jpg
+python verify_student.py --scope SCH001/10/A --image ../media/attendance/front.jpg ../media/attendance/back.jpg
 ```
 
 Use the same `--scope` value for students and classroom photos in one school-code/class/section. Without `--scope`, the service falls back to the legacy global embeddings folder. `register_student.py` prints only the created-embedding JSON. `verify_student.py` prints only the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status; InsightFace provider/model logs are suppressed so the output can be parsed directly.
