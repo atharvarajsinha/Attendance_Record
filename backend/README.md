@@ -16,7 +16,7 @@ python manage.py runserver 0.0.0.0:8000
 
 ## APIs
 
-- `POST /api/student/register/` multipart fields: `student_id`, `full_name`, optional `email`, optional `class_name`, optional `section`, `image`.
-- `POST /api/attendance/verify/` multipart fields: optional `class_name`, optional `section`, `image`.
+- `POST /api/student/register/` multipart fields: `student_id`, `full_name`, optional `email`, optional `school_code`, optional `class_name`, optional `section`, `image`.
+- `POST /api/attendance/verify/` multipart fields: optional `school_code`, optional `class_name`, optional `section`, `image`.
 
-The backend saves uploads locally, builds a class/section scope when those fields are supplied, calls the AI service with `requests`, stores results, and returns JSON to React. React must not call the AI service directly.
+The backend saves uploads locally, builds a school-code/class/section scope when those fields are supplied, calls the AI service with `requests`, stores results, and returns JSON to React. React must not call the AI service directly.
