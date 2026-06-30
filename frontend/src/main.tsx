@@ -29,6 +29,7 @@ function StudentRegistration() {
         <input name="student_id" placeholder="Student ID (e.g. 101)" required />
         <input name="full_name" placeholder="Full name" required />
         <input name="email" placeholder="Email" type="email" />
+        <input name="school_code" placeholder="School code (e.g. SCH001)" />
         <input name="class_name" placeholder="Class (e.g. 10)" />
         <input name="section" placeholder="Section (e.g. A)" />
         <input name="image" type="file" accept="image/*" required />
@@ -60,9 +61,10 @@ function AttendanceVerification() {
     <section className="card">
       <h2>Attendance Verification</h2>
       <form onSubmit={submit}>
+        <input name="school_code" placeholder="School code (e.g. SCH001)" />
         <input name="class_name" placeholder="Class (e.g. 10)" />
         <input name="section" placeholder="Section (e.g. A)" />
-        <input name="image" type="file" accept="image/*" required />
+        <input name="images" type="file" accept="image/*" multiple required />
         <button disabled={state.loading}>{state.loading ? "Verifying..." : "Verify Attendance"}</button>
       </form>
       <Result state={state} />
