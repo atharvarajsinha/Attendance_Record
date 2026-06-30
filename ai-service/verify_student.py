@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
         help="Register one student face instead of verifying attendance against existing embeddings.",
     )
     parser.add_argument("--student-id", help="Student ID required when --register is used.")
-    parser.add_argument("--scope", help="Optional class/section scope, for example class_10_A.")
+    parser.add_argument("--scope", help="Optional school-code/class/section scope, for example SCH001/10/A.")
     return parser.parse_args()
 
 

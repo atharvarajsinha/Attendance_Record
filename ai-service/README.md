@@ -27,16 +27,16 @@ The model adapter is isolated in `app/face_engine.py` so InsightFace Buffalo_L c
 
 Use `register_student.py` and `verify_student.py` when you want to test the AI service locally without starting Django or React. Run them from the `ai-service/` directory after installing this service's requirements.
 
-Register a single student image and create `../media/embeddings/class_10_A/student_101.npy`:
+Register a single student image and create `../media/embeddings/SCH001/10/A/student_101.npy`:
 
 ```bash
-python register_student.py --student-id 101 --scope class_10_A --image ../media/students/student101.jpg
+python register_student.py --student-id 101 --scope SCH001/10/A --image ../media/students/student101.jpg
 ```
 
 Verify a classroom image against existing local embeddings:
 
 ```bash
-python verify_student.py --scope class_10_A --image ../media/attendance/2026-06-29/classroom.jpg
+python verify_student.py --scope SCH001/10/A --image ../media/attendance/classroom.jpg
 ```
 
-Use the same `--scope` value for students and classroom photos in one class/section. Without `--scope`, the service falls back to the legacy global embeddings folder. `register_student.py` prints only the created-embedding JSON. `verify_student.py` prints only the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status; InsightFace provider/model logs are suppressed so the output can be parsed directly.
+Use the same `--scope` value for students and classroom photos in one school-code/class/section. Without `--scope`, the service falls back to the legacy global embeddings folder. `register_student.py` prints only the created-embedding JSON. `verify_student.py` prints only the same JSON shape as `POST /verify-attendance`, including `detected_faces`, `matches`, and each student's `Present`/`Absent` status; InsightFace provider/model logs are suppressed so the output can be parsed directly.
