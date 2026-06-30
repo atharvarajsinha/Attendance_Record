@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from io import StringIO
 from typing import Iterable, Iterator
 import warnings
@@ -19,7 +19,10 @@ class FaceEngine(ABC):
     @staticmethod
     def best_similarity(query: np.ndarray, candidates: Iterable[np.ndarray]) -> float:
         query_norm = _l2_normalize(query)
-        scores = [float(np.dot(query_norm, _l2_normalize(candidate))) for candidate in candidates]
+        scores = [
+            float(np.dot(query_norm, _l2_normalize(candidate)))
+            for candidate in candidates
+        ]
         return max(scores) if scores else 0.0
 
 
@@ -31,9 +34,14 @@ class InsightFaceBuffaloEngine(FaceEngine):
     """
 
     def __init__(self) -> None:
-        with _suppress_insightface_console_output():
-            self.app = FaceAnalysis(name=settings.insightface_model_name, providers=settings.insightface_providers)
-            self.app.prepare(ctx_id=settings.insightface_ctx_id, det_size=settings.detection_size)
+        with _suppress_insightface_console_output(redirect_console=True):
+            self.app = FaceAnalysis(
+                name=settings.insightface_model_name,
+                providers=settings.insightface_providers,
+            )
+            self.app.prepare(
+                ctx_id=settings.insightface_ctx_id, det_size=settings.detection_size
+            )
 
     def image_to_embeddings(self, image_bytes: bytes) -> list[np.ndarray]:
         image_array = np.frombuffer(image_bytes, dtype=np.uint8)
@@ -43,7 +51,9 @@ class InsightFaceBuffaloEngine(FaceEngine):
 
         with _suppress_insightface_console_output():
             faces = self.app.get(image)
-        return [_l2_normalize(face.normed_embedding).astype(np.float32) for face in faces]
+        return [
+            _l2_normalize(face.normed_embedding).astype(np.float32) for face in faces
+        ]
 
 
 def _l2_normalize(embedding: np.ndarray) -> np.ndarray:
@@ -55,9 +65,17 @@ def _l2_normalize(embedding: np.ndarray) -> np.ndarray:
 
 
 @contextmanager
-def _suppress_insightface_console_output() -> Iterator[None]:
-    """Keep InsightFace provider/model logs and NumPy FutureWarnings out of CLI JSON output."""
+def _suppress_insightface_console_output(
+    redirect_console: bool = False,
+) -> Iterator[None]:
+    """Suppress FutureWarnings without redirecting stdout during parallel inference.
+
+    stdout/stderr redirection is process-global and not thread-safe, so it is only
+    used for model startup logs before parallel verification workers run.
+    """
+    output_context = redirect_stdout(StringIO()) if redirect_console else nullcontext()
+    error_context = redirect_stderr(StringIO()) if redirect_console else nullcontext()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
-        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+        with output_context, error_context:
             yield
