@@ -46,4 +46,4 @@ npm run dev -- --host 0.0.0.0
 
 ## Local storage
 
-The backend stores uploaded images under `media/students/` and dated attendance folders under `media/attendance/YYYY-MM-DD/`. The AI service stores embeddings under `media/embeddings/` using names like `student_101.npy`.
+The backend stores uploaded registration and verification images under school-code/class/section-aware media folders such as `media/students/<school_code>/<class>/<section>/` and `media/attendance/<school_code>/<class>/<section>/`. The AI service stores embeddings under matching scoped folders such as `media/embeddings/<school_code>/<class>/<section>/student_101.npy`.
