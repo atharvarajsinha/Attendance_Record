@@ -64,7 +64,7 @@ function AttendanceVerification() {
         <input name="school_code" placeholder="School code (e.g. SCH001)" />
         <input name="class_name" placeholder="Class (e.g. 10)" />
         <input name="section" placeholder="Section (e.g. A)" />
-        <input name="image" type="file" accept="image/*" required />
+        <input name="images" type="file" accept="image/*" multiple required />
         <button disabled={state.loading}>{state.loading ? "Verifying..." : "Verify Attendance"}</button>
       </form>
       <Result state={state} />

@@ -24,6 +24,18 @@ def scoped_attendance_image_path(instance: "AttendanceSession", filename: str) -
     )
 
 
+def scoped_attendance_session_image_path(
+    instance: "AttendanceSessionImage", filename: str
+) -> str:
+    return _scoped_media_path(
+        "attendance",
+        instance.session.school_code,
+        instance.session.class_name,
+        instance.session.section,
+        filename,
+    )
+
+
 def _scoped_media_path(
     prefix: str,
     school_code: str | None,
@@ -66,6 +78,14 @@ class AttendanceSession(models.Model):
     image = models.ImageField(upload_to=scoped_attendance_image_path)
     detected_faces = models.PositiveIntegerField(default=0)
     ai_response = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AttendanceSessionImage(models.Model):
+    session = models.ForeignKey(
+        AttendanceSession, related_name="images", on_delete=models.CASCADE
+    )
+    image = models.ImageField(upload_to=scoped_attendance_session_image_path)
     created_at = models.DateTimeField(auto_now_add=True)
 
 

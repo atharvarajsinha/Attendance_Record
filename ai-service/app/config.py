@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     embeddings_dir: Path = Path("../media/embeddings")
     similarity_threshold: float = 0.45
+    verification_max_workers: int = 4
     device: str = "cpu"
     insightface_model_name: str = "buffalo_l"
     detection_width: int = 640

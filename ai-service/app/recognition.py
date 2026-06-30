@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import re
 
@@ -36,31 +37,42 @@ def load_known_embeddings(scope: str | None = None) -> dict[str, np.ndarray]:
 def verify_attendance_image(
     face_engine: FaceEngine, image_bytes: bytes, scope: str | None = None
 ) -> dict[str, object]:
+    return verify_attendance_images(face_engine, [image_bytes], scope=scope)
+
+
+def verify_attendance_images(
+    face_engine: FaceEngine, image_bytes_list: list[bytes], scope: str | None = None
+) -> dict[str, object]:
+    if not image_bytes_list:
+        raise ValueError("At least one attendance image is required.")
+
     known_embeddings = load_known_embeddings(scope)
     if not known_embeddings:
         raise ValueError("No registered student embeddings were found.")
 
-    detected_embeddings = face_engine.image_to_embeddings(image_bytes)
+    image_results = _extract_embeddings_in_parallel(face_engine, image_bytes_list)
     present_ids: set[str] = set()
     matches: list[dict[str, object]] = []
 
-    for face_index, embedding in enumerate(detected_embeddings):
-        best_student_id = None
-        best_score = 0.0
-        for student_id, known_embedding in known_embeddings.items():
-            score = face_engine.best_similarity(embedding, [known_embedding])
-            if score > best_score:
-                best_score = score
-                best_student_id = student_id
-        if best_student_id and best_score >= settings.similarity_threshold:
-            present_ids.add(best_student_id)
-            matches.append(
-                {
-                    "face_index": face_index,
-                    "student_id": best_student_id,
-                    "similarity": best_score,
-                }
-            )
+    for image_index, detected_embeddings in enumerate(image_results):
+        for face_index, embedding in enumerate(detected_embeddings):
+            best_student_id = None
+            best_score = 0.0
+            for student_id, known_embedding in known_embeddings.items():
+                score = face_engine.best_similarity(embedding, [known_embedding])
+                if score > best_score:
+                    best_score = score
+                    best_student_id = student_id
+            if best_student_id and best_score >= settings.similarity_threshold:
+                present_ids.add(best_student_id)
+                matches.append(
+                    {
+                        "image_index": image_index,
+                        "face_index": face_index,
+                        "student_id": best_student_id,
+                        "similarity": best_score,
+                    }
+                )
 
     students = [
         {
@@ -72,10 +84,29 @@ def verify_attendance_image(
     return {
         "status": "success",
         "scope": _normalize_scope(scope),
-        "detected_faces": len(detected_embeddings),
+        "image_count": len(image_bytes_list),
+        "detected_faces": sum(len(embeddings) for embeddings in image_results),
+        "images": [
+            {"image_index": image_index, "detected_faces": len(embeddings)}
+            for image_index, embeddings in enumerate(image_results)
+        ],
         "matches": matches,
         "students": students,
     }
+
+
+def _extract_embeddings_in_parallel(
+    face_engine: FaceEngine, image_bytes_list: list[bytes]
+) -> list[list[np.ndarray]]:
+    max_workers = min(len(image_bytes_list), settings.verification_max_workers)
+    if max_workers <= 1:
+        return [
+            face_engine.image_to_embeddings(image_bytes)
+            for image_bytes in image_bytes_list
+        ]
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(face_engine.image_to_embeddings, image_bytes_list))
 
 
 def _embedding_dir(scope: str | None = None) -> Path:

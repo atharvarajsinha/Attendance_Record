@@ -5,7 +5,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from attendance.ai_client import AIServiceClient, AIServiceError
-from attendance.models import AttendanceRecord, AttendanceSession, Student
+from attendance.models import (
+    AttendanceRecord,
+    AttendanceSession,
+    AttendanceSessionImage,
+    Student,
+)
 from attendance.serializers import AttendanceSessionSerializer, StudentSerializer
 
 
@@ -43,10 +48,10 @@ class AttendanceVerifyView(APIView):
 
     @transaction.atomic
     def post(self, request):
-        image = request.FILES.get("image")
-        if image is None:
+        images = request.FILES.getlist("images") or request.FILES.getlist("image")
+        if not images:
             return Response(
-                {"image": ["This field is required."]},
+                {"images": ["At least one image is required."]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -54,11 +59,22 @@ class AttendanceVerifyView(APIView):
         class_name = request.data.get("class_name", "")
         section = request.data.get("section", "")
         session = AttendanceSession.objects.create(
-            image=image, school_code=school_code, class_name=class_name, section=section
+            image=images[0],
+            school_code=school_code,
+            class_name=class_name,
+            section=section,
         )
+        extra_images = [
+            AttendanceSessionImage.objects.create(session=session, image=image)
+            for image in images[1:]
+        ]
+        image_paths = [
+            session.image.path,
+            *[extra_image.image.path for extra_image in extra_images],
+        ]
         try:
             ai_response = AIServiceClient().verify_attendance(
-                session.image.path,
+                image_paths,
                 scope=build_attendance_scope(school_code, class_name, section),
             )
         except AIServiceError as exc:
